@@ -18,4 +18,8 @@
     <menuitem id="property_type_menu_action"
         parent="settings_menu"
         action="estate_property_type_action"/>
+
+    <menuitem id="property_tag_menu_action"
+        parent="settings_menu"
+        action="estate_property_tag_action"/>
 </odoo>
