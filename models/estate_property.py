@@ -1,4 +1,4 @@
-from odoo import api, fields, models, exceptions
+from odoo import api, fields, models, exceptions, tools
 from odoo.tools import date_utils
 
 class EstateProperty(models.Model):
@@ -51,6 +51,11 @@ class EstateProperty(models.Model):
     total_area = fields.Integer('Total Area (sqm)', compute='_compute_total_area')
     best_price = fields.Float('Best Price', compute='_compute_best_price')
 
+    _sql_constraints = [
+        ('check_expected_price', 'CHECK(expected_price > 0)', 'The expected price must be greater than 0'),
+        ('check_selling_price', 'CHECK(selling_price > 0)', 'The selling price must be greater than 0'),
+    ]
+
     @api.depends('living_area', 'garden_area')
     def _compute_total_area(self):
         for record in self:
@@ -59,7 +64,10 @@ class EstateProperty(models.Model):
     @api.depends('offer_ids.price')
     def _compute_best_price(self):
         for record in self:
-            record.best_price = max(record.offer_ids.mapped('price'))
+            if record.offer_ids:
+                record.best_price = max(record.offer_ids.mapped('price'))
+            else:
+                record.best_price = 0
 
     @api.onchange('garden')
     def _onchange_garden(self):
@@ -88,3 +96,9 @@ class EstateProperty(models.Model):
             self.state = 'canceled'
 
         return True
+    
+    @api.constrains('selling_price', 'expected_price')
+    def _check_selling_price(self):
+        for record in self:
+            if tools.float_utils.float_compare(record.selling_price, record.expected_price * 0.9, precision_digits=2) == -1:
+                raise exceptions.ValidationError('The selling price cannot be lower than 90% of the expected price')
