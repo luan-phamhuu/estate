@@ -28,8 +28,9 @@
         <field name="arch" type="xml">
             <form>
                 <header>
-                    <button name="action_sell" string="Sold" type="object"/>
-                    <button name="action_cancel" string="Cancel" type="object"/>
+                    <button name="action_sell" string="Sold" type="object" states="new,offer_received" class="btn-primary"/>
+                    <button name="action_cancel" string="Cancel" type="object" states="new"/>
+                    <field name="state" widget="statusbar" statusbar_visible="new,offer_received,offer_accepted,sold"/>
                 </header>
                 <sheet>
                     <div>
@@ -39,9 +40,8 @@
                     </div>
                     <group>
                         <group>
-                            <field name="state"/>
-                            <field name="tag_ids" widget="many2many_tags"/>
-                            <field name="property_type_id"/>
+                            <field name="tag_ids" widget="many2many_tags" options="{'color_field': 'color'}"/>
+                            <field name="property_type_id" options="{'no_create': true}"/>
                             <field name="postcode"/>
                             <field name="date_availability"/>
                         </group>
