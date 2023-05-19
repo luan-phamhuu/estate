@@ -8,10 +8,12 @@ class EstatePropertyOffer(models.Model):
 
 
     price = fields.Float('Price', required=True)
-    status = fields.Selection(
+    state = fields.Selection(
         string="Status",
         copy=False,
+        default='new',
         selection=[
+            ('new', 'New'),
             ('accepted', 'Accepted'),
             ('refused', 'Refused'),
         ],
@@ -38,7 +40,7 @@ class EstatePropertyOffer(models.Model):
 
     def action_accept(self):
         for record in self:
-            record.status = 'accepted'
+            record.state = 'accepted'
             record.property_id.state = 'offer_accepted'
             record.property_id.selling_price = record.price
             record.property_id.buyer_id = record.partner_id.id
@@ -46,7 +48,24 @@ class EstatePropertyOffer(models.Model):
 
     def action_refuse(self):
         for record in self:
-            record.status = 'refused'
+            record.state = 'refused'
+
+            # build a set of property's offers state
+            # if there is an accepted offer, then the property state is 'offer_accepted'
+            # if there is not accepted offer, and there are still 'new' offer, then the property state is 'offer_received'
+            # if there is not accepted offer, and there is no 'new' offer, then the property state is 'new'
+            offer_states = set(record.property_id.offer_ids.mapped('state'))
+            if 'accepted' in offer_states:
+                record.property_id.state = 'offer_accepted'
+            elif 'new' in offer_states:
+                record.property_id.state = 'offer_received'
+                record.property_id.selling_price = 0
+                record.property_id.buyer_id = False
+            else:
+                record.property_id.state = 'new'
+                record.property_id.selling_price = 0
+                record.property_id.buyer_id = False
+
         return True
 
     @api.model
